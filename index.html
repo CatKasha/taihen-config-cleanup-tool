@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>taihen config cleanup tool</title>
+    <style>
+        body {
+            margin: 0 auto;
+            height: 100vh;
+            max-width: 1600px;
+            display: flex;
+            align-items: center;
+        }
+
+        textarea {
+            resize: none;
+
+            width: 100%;
+            margin: 10px 0;
+            align-self: stretch;
+        }
+
+        button {
+            margin: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <textarea id="input_config" spellcheck="false" autocomplete="off" placeholder="place your config here"></textarea>
+    <button onclick="dothething()">combine sections</button>
+    <textarea id="output_config" spellcheck="false" autocomplete="off" placeholder="edited config will appear here"></textarea>
+
+    <script>
+        function dothething() {
+            let input_config = document.getElementById("input_config").value;
+            input_config = input_config.replace(/^\s+/gm, "");
+            input_config = input_config.split("\n");
+
+            let current_section = "";
+            let taihen_config = {
+                "*KERNEL": [],
+                "*main": ["ur0:tai/henkaku.suprx"],
+                "*NPXS10015": ["ur0:tai/henkaku.suprx"],
+                "*NPXS10016": ["ur0:tai/henkaku.suprx"],
+            };
+            for (let i = 0; input_config.length > i; i++) {
+                if (input_config[i].startsWith("*")) {
+                    current_section = input_config[i].match(/^\*\w+/)[0];
+                    if (current_section in taihen_config == false) {
+                        taihen_config[current_section] = [];
+                    }
+                    continue
+                }
+
+                let plugin_path = input_config[i].match(/^(?:|#\s*)(?:ur0|ux0):\S+(?:\.skprx|\.suprx)/);
+                if (plugin_path !== null) {
+                    if (taihen_config[current_section].includes(plugin_path[0]) == false) {
+                        taihen_config[current_section].push(plugin_path[0]);
+                    }
+                }
+            }
+
+            let output_config = "";
+            taihen_sections = Object.keys(taihen_config);
+            for (let i = 0; taihen_sections.length > i; i++) {
+                let current_section = taihen_sections[i];
+
+                output_config += current_section + "\n";
+                if (taihen_config[current_section].length > 0) {
+                    output_config += taihen_config[current_section].join("\n") + "\n";
+                }
+
+                if (taihen_sections.length !== i + 1) {
+                    output_config += "\n\n";
+                }
+            }
+            document.getElementById("output_config").value = output_config;
+        }
+    </script>
+</body>
+</html>
