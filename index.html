@@ -1,38 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>taihen config cleanup tool</title>
     <style>
+        html,
+        body {
+            height: 100%;
+        }
+
         body {
             margin: 0 auto;
-            height: 100vh;
             max-width: 1600px;
             display: flex;
-            align-items: center;
+        }
+
+        body>button {
+            align-self: center;
+        }
+
+        body>div {
+            width: 100%;
+            margin: 5px;
+
+            display: flex;
+            flex-direction: column;
         }
 
         textarea {
             resize: none;
 
+            box-sizing: border-box;
             width: 100%;
-            margin: 10px 0;
-            align-self: stretch;
+            flex: 1;
         }
 
-        button {
-            margin: 4px;
+        #or {
+            margin: 0 10px;
         }
     </style>
 </head>
 
 <body>
-    <textarea id="input_config" spellcheck="false" autocomplete="off" placeholder="place your config here"></textarea>
+    <div>
+        <input type="file" onchange="read_config(this)" />
+        <textarea id="input_config" spellcheck="false" autocomplete="off" placeholder="paste your config here"></textarea>
+    </div>
+
     <button onclick="dothething()">combine sections</button>
-    <textarea id="output_config" spellcheck="false" autocomplete="off" placeholder="edited config will appear here"></textarea>
+
+    <div>
+        <div>
+            <button type="button" onclick="download_config()">download config.txt</button>
+            <span id="or">or</span>
+            <button type="button" onclick="clipboard_overwrite()">copy to clipboard</button>
+        </div>
+        <textarea id="output_config" spellcheck="false" autocomplete="off" placeholder="edited config will appear here"></textarea>
+    </div>
 
     <script>
+        function read_config(input) {
+            let file = input.files[0];
+            let reader = new FileReader();
+
+            reader.onload = function () {
+                document.getElementById("input_config").value = reader.result;
+            };
+            reader.readAsText(file);
+        }
+
         function dothething() {
             let input_config = document.getElementById("input_config").value;
             input_config = input_config.replace(/^\s+/gm, "");
@@ -51,7 +89,7 @@
                     if (current_section in taihen_config == false) {
                         taihen_config[current_section] = [];
                     }
-                    continue
+                    continue;
                 }
 
                 let plugin_path = input_config[i].match(/^(?:|#\s*)(?:ur0|ux0):\S+(?:\.skprx|\.suprx)/);
@@ -78,6 +116,22 @@
             }
             document.getElementById("output_config").value = output_config;
         }
+
+        function download_config() {
+            let output_config = document.getElementById("output_config").value;
+            let text_as_blob = new Blob([output_config], { type: "text/plain" });
+
+            let link = document.createElement("a");
+            link.download = "config.txt";
+            link.href = window.webkitURL.createObjectURL(text_as_blob);
+            link.click();
+        }
+
+        function clipboard_overwrite() {
+            let output_config = document.getElementById("output_config").value;
+            navigator.clipboard.writeText(output_config);
+        }
     </script>
 </body>
+
 </html>
