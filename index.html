@@ -17,11 +17,7 @@
             display: flex;
         }
 
-        body>button {
-            align-self: center;
-        }
-
-        body>div {
+        body>div.side {
             width: 100%;
             margin: 5px;
 
@@ -29,11 +25,25 @@
             flex-direction: column;
         }
 
+        body>div.mid {
+            align-self: center;
+            width: 200px;
+        }
+
+        #og_comments {
+            margin: 0;
+        }
+
+        #empty_lines {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
         textarea {
             resize: none;
 
-            box-sizing: border-box;
             width: 100%;
+            box-sizing: border-box;
             flex: 1;
         }
 
@@ -44,18 +54,27 @@
 </head>
 
 <body>
-    <div>
+    <div class="side">
         <input type="file" onchange="read_config(this)" />
         <textarea id="input_config" spellcheck="false" autocomplete="off" placeholder="paste your config here"></textarea>
     </div>
-
-    <button onclick="dothething()">combine sections</button>
-
-    <div>
+    <div class="mid">
+        <label for="og_comments">keep original taiHEN comments</label>
+        <input type="checkbox" id="og_comments" autocomplete="off" onchange="dothething()">
+        <br>
+        <br>
+        <div>empty lines between sections</div>
+        <input type="number" id="empty_lines" value="2" min="0" autocomplete="off" onchange="dothething()">
+        <br>
+        <br>
+        <br>
+        <button onclick="dothething()">combine sections</button>
+    </div>
+    <div class="side">
         <div>
-            <button type="button" onclick="download_config()">download config.txt</button>
-            <span id="or">or</span>
             <button type="button" onclick="clipboard_overwrite()">copy to clipboard</button>
+            <span id="or">or</span>
+            <button type="button" onclick="download_config()">download config.txt</button>
         </div>
         <textarea id="output_config" spellcheck="false" autocomplete="off" placeholder="edited config will appear here"></textarea>
     </div>
@@ -76,17 +95,19 @@
             input_config = input_config.replace(/^\s+/gm, "");
             input_config = input_config.split("\n");
 
-            let current_section = "";
+
             let taihen_config = {
                 "*KERNEL": [],
                 "*main": ["ur0:tai/henkaku.suprx"],
                 "*NPXS10015": ["ur0:tai/henkaku.suprx"],
-                "*NPXS10016": ["ur0:tai/henkaku.suprx"],
+                "*NPXS10016": ["ur0:tai/henkaku.suprx"]
             };
+
+            let current_section = "";
             for (let i = 0; input_config.length > i; i++) {
                 if (input_config[i].startsWith("*")) {
                     current_section = input_config[i].match(/^\*\w+/)[0];
-                    if (current_section in taihen_config == false) {
+                    if (current_section in taihen_config === false) {
                         taihen_config[current_section] = [];
                     }
                     continue;
@@ -94,24 +115,44 @@
 
                 let plugin_path = input_config[i].match(/^(?:|#\s*)(?:ur0|ux0):\S+(?:\.skprx|\.suprx)/);
                 if (plugin_path !== null) {
-                    if (taihen_config[current_section].includes(plugin_path[0]) == false) {
+                    if (taihen_config[current_section].includes(plugin_path[0]) === false) {
                         taihen_config[current_section].push(plugin_path[0]);
                     }
                 }
             }
 
-            let output_config = "";
-            taihen_sections = Object.keys(taihen_config);
-            for (let i = 0; taihen_sections.length > i; i++) {
-                let current_section = taihen_sections[i];
 
-                output_config += current_section + "\n";
-                if (taihen_config[current_section].length > 0) {
-                    output_config += taihen_config[current_section].join("\n") + "\n";
+            let output_config = "";
+            let taihen_comments = [
+                "# This file is used as an alternative if ux0:tai/config.txt is not found.\n" +
+                "# For users plugins, you must refresh taiHEN from HENkaku Settings for\n" +
+                "# changes to take place.\n" +
+                "# For kernel plugins, you must reboot for changes to take place.\n",
+
+                "# henkaku.skprx is hard-coded to load and is not listed here",
+                "# main is a special titleid for SceShell",
+                "# this is for modifying the version string",
+                "# this is for modifying the version string in settings widget"
+            ];
+
+            let taihen_sections = Object.keys(taihen_config);
+            if (document.getElementById("og_comments").checked) {
+                output_config = taihen_comments[0];
+
+                for (let i = 0; taihen_sections.length > i; i++) {
+                    taihen_config[taihen_sections[i]].unshift(taihen_comments[i + 1]);
+                }
+            }
+
+            for (let i = 0; taihen_sections.length > i; i++) {
+                output_config += taihen_sections[i] + "\n";
+
+                if (taihen_config[taihen_sections[i]].length > 0) {
+                    output_config += taihen_config[taihen_sections[i]].join("\n") + "\n";
                 }
 
                 if (taihen_sections.length !== i + 1) {
-                    output_config += "\n\n";
+                    output_config += "\n".repeat(document.getElementById("empty_lines").valueAsNumber);
                 }
             }
             document.getElementById("output_config").value = output_config;
