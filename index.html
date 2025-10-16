@@ -139,8 +139,8 @@
             if (document.getElementById("og_comments").checked) {
                 output_config = taihen_comments[0];
 
-                for (let i = 0; taihen_sections.length > i; i++) {
-                    taihen_config[taihen_sections[i]].unshift(taihen_comments[i + 1]);
+                for (let i = 1; taihen_comments.length > i; i++) {
+                    taihen_config[taihen_sections[i - 1]].unshift(taihen_comments[i]);
                 }
             }
 
