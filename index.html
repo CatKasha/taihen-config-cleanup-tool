@@ -102,6 +102,12 @@
                 "*NPXS10015": ["ur0:tai/henkaku.suprx"],
                 "*NPXS10016": ["ur0:tai/henkaku.suprx"]
             };
+            let next_ur0_plugin_pos = {
+                "*KERNEL": 0,
+                "*main": 1,
+                "*NPXS10015": 1,
+                "*NPXS10016": 1
+            };
 
             let current_section = "";
             for (let i = 0; input_config.length > i; i++) {
@@ -109,14 +115,20 @@
                     current_section = input_config[i].match(/^\*\w+/)[0];
                     if (current_section in taihen_config === false) {
                         taihen_config[current_section] = [];
+                        next_ur0_plugin_pos[current_section] = 0;
                     }
                     continue;
                 }
 
                 let plugin_path = input_config[i].match(/^(?:|#\s*)(?:ur0|ux0):\S+(?:\.skprx|\.suprx)/);
-                if (plugin_path !== null) {
+                if (plugin_path) {
                     if (taihen_config[current_section].includes(plugin_path[0]) === false) {
-                        taihen_config[current_section].push(plugin_path[0]);
+                        if (plugin_path[0].match(/^(?:|#\s*)ur0/)) {
+                            taihen_config[current_section].splice(next_ur0_plugin_pos[current_section], 0, plugin_path[0]);
+                            next_ur0_plugin_pos[current_section]++;
+                        } else {
+                            taihen_config[current_section].push(plugin_path[0]);
+                        }
                     }
                 }
             }
@@ -138,6 +150,9 @@
             let taihen_sections = Object.keys(taihen_config);
             if (document.getElementById("og_comments").checked) {
                 output_config = taihen_comments[0];
+                if (document.getElementById("empty_lines").valueAsNumber > 0) {
+                    output_config += "\n";
+                }
 
                 for (let i = 1; taihen_comments.length > i; i++) {
                     taihen_config[taihen_sections[i - 1]].unshift(taihen_comments[i]);
